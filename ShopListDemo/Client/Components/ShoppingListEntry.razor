@@ -1,0 +1,196 @@
+﻿@using ShopListDemo.Shared.Data;
+@using ShopListDemo.Client.Components.DeleteDialogComponent;
+
+@if (!InEditMode)
+{
+    <div class="row list-entry @BackgroundClass" >
+
+        <div class="col-2 col-sm-2 vertical-center-content pt-2">
+        @if (EntryModel.IsChecked)
+        {
+            checkBoxAttributes["checked"] = "checked";
+        }
+        else
+        {
+            checkBoxAttributes.Clear();
+        }
+
+        <input type="checkbox" @attributes=@checkBoxAttributes @bind-value=@EntryModel.IsChecked @bind-value:event="oninput" @onchange="async () => await OnCheckBoxChange()" />
+    
+        </div>
+        <div class="col-5 col-sm-6 vertical-center-content">
+            <div class="row @viewClass">
+                <div class="col-12 col-sm-8 vertical-center-content" @onclick="SwitchToEditMode">
+                    @if (EntryModel.IsChecked)
+                    {
+                        nameStyle = "list-entry-checked";
+                    }
+                    else
+                    {
+                        nameStyle = "";
+                    }
+                    <span class="@nameStyle item-name" >@EntryModel.Name</span>
+                </div>
+                <div class="col-12 col-sm-4 vertical-center-content">
+                    <span class="secondary-text"> @EntryModel.Quantity @EntryModel.MeasuringUnit</span>
+                </div>           
+           
+            </div>
+        
+        </div>
+        <div class="col-5 col-sm-4 vertical-center-content justify-content-end justify-content-md-start">
+            @if (!IsFirst)
+            {
+                <button id="up_@EntryModel.Id" @onclick="async () => await OnRankUp.InvokeAsync(EntryModel)" title="Increse priority" class="custom-button blue input-control">
+                    <span class="oi oi-arrow-circle-top button-icon"></span>
+                </button>
+            }
+
+            @if (!IsLast)
+            {
+                <button id="down_@EntryModel.Id" @onclick="async () => await OnRankDown.InvokeAsync(EntryModel)" title="Decrese priority" class="custom-button blue input-control">
+                    <span class="oi oi-arrow-circle-bottom button-icon"></span>
+                </button>
+            }
+            @if (!InEditMode)
+            {
+                <button @onclick="() => deleteDialog.Show()" title="Remove Item" class="custom-button red input-control">
+                    <span  class="oi oi-delete button-icon"></span>
+                </button>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="row list-entry @BackgroundClass">
+        <div class="col-12">
+            <EditForm Model="@EntryModel" OnValidSubmit="async () => { await OnDataUpdated.InvokeAsync(EntryModel); SwitchToViewMode(); }">
+                <DataAnnotationsValidator />
+
+                <div class="row">
+                    <div class="col-12 col-sm-6 d-flex justify-content-end justify-content-sm-start">
+                        <InputText class="input-control full-width" placeholder="Name" @bind-Value="EntryModel.Name" />
+                    </div>
+                    <div class="col-12 col-sm-6 d-flex justify-content-end justify-content-sm-start">
+                        <InputNumber class="input-control qty-control" id="quantity" min="1" @bind-Value="EntryModel.Quantity" />
+
+                        <InputSelect class="input-control .qty-control" id="unitOfMeasure" name="UnitsOfMeasures"  @bind-Value="EntryModel.MeasuringUnit">
+                            <option value="Piece">Piece</option>
+                            <option value="Box">Box</option>
+                            <option value="Kg">Kg</option>
+                        </InputSelect>
+                        @{ 
+                            var title = "Save changes";
+                            var icon = "oi oi-circle-check button-icon";
+                            
+                        }
+                        @if (IsEditor)
+                        {
+                            title = "Add item";
+                            icon = "oi oi-plus button-icon";
+                        }
+                        <button type="submit" title="@title" class="custom-button green input-control">                               
+                                <span class="@icon"></span>                                
+                        </button>
+
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+}
+<DeleteDialog @ref="deleteDialog" ItemDescription="@EntryModel.Name" OnDeleteAccepted="async () => await OnDelete.InvokeAsync(EntryModel)"></DeleteDialog>
+
+@code {
+
+    private Dictionary<string, object> checkBoxAttributes = new Dictionary<string, object>();
+
+    private string nameStyle="";
+
+    private DeleteDialog deleteDialog;
+    private bool isEditor = false;
+    private bool inEditMode = false;
+    private string viewClass = "show-element";
+    
+
+
+    [Parameter]
+    public string BackgroundClass { get; set; }
+
+    [Parameter]
+    public ShoppingListItemData EntryModel{ get; set; }
+
+    [Parameter]
+    public bool IsFirst { get; set; }
+
+    [Parameter]
+    public bool IsLast { get; set; }
+
+    [Parameter]
+    public bool InEditMode
+    {
+        get => inEditMode;
+        set
+        {
+            inEditMode = value;
+            if (IsEditor)
+                inEditMode = true;
+
+            if (inEditMode)
+            {
+                viewClass = "hide-element";
+                
+            }
+            else
+            {
+                viewClass = "show-element";
+                
+            }
+        }
+    }
+
+    [Parameter]
+    public bool IsEditor
+    {
+        get => isEditor;
+        set
+        {
+            isEditor = value;
+            if (isEditor)
+                InEditMode = true;
+        }
+
+    }
+
+
+    [Parameter]
+    public EventCallback<ShoppingListItemData> OnDataUpdated { get; set; }
+
+    [Parameter]
+    public EventCallback<ShoppingListItemData> OnRankUp { get; set; }
+
+    [Parameter]
+    public EventCallback<ShoppingListItemData> OnRankDown { get; set; }
+
+    [Parameter]
+    public EventCallback<ShoppingListItemData> OnDelete { get; set; }
+
+    private async Task OnCheckBoxChange()
+    {
+        await OnDataUpdated.InvokeAsync(EntryModel);
+    }
+
+    private void SwitchToEditMode()
+    {
+        InEditMode = true;
+        StateHasChanged();
+    }
+
+    private void SwitchToViewMode()
+    {
+        InEditMode = false;
+        StateHasChanged();
+    }
+}

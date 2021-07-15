@@ -1,0 +1,38 @@
+﻿<div class="row list-title @BackgroundClass">
+    <div class="col-12">
+        <span>@Title</span>
+    </div>
+</div>
+<div class="row list-header @BackgroundClass">
+    <div class="row">
+        <div class="col-9">
+            <div class="row">
+                <div class="col-12 col-sm-7">
+                    Name
+                </div>
+                <div class="col-12 col-sm-2">
+                    Items Count
+                </div>
+                <div class="col-12 col-sm-3">
+                    Created On
+                </div>
+            </div>
+        </div>
+        <div class="col-3">
+            <div class="row">
+                <div class="col-12">
+                    Actions
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string BackgroundClass { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }
+}
+

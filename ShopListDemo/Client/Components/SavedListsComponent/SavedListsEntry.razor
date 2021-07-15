@@ -1,0 +1,57 @@
+﻿@inherits SavedListsEntryBase
+@using ShopListDemo.Client.Components.DeleteDialogComponent;
+
+@if (!IsEditor)
+{
+    <div class="row list-entry @BackgroundClass">
+        <div class="col-9">
+            <div class="row full-height">
+                <div class="col-12 col-sm-7 vertical-center-content" @onclick="OpenShoppingList">
+                    <span class="item-name"> @EntryModel.Name </span>
+                </div>
+                <div class="col-12 col-sm-2 vertical-center-content">
+                    <span class="secondary-text"> @EntryModel.ItemsCount</span>
+                    @if (EntryModel.ItemsCount == 1)
+                    {
+                        <span class="secondary-text sm-invisible">&nbsp;item</span>
+                    }
+                    else
+                    {
+                        <span class="secondary-text sm-invisible">&nbsp;items</span>
+                    }
+                </div>
+                <div class="col-12 col-sm-3 vertical-center-content">
+                    <span class="secondary-text"> @EntryModel.CreateTime</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-3 vertical-center-content">
+            <div class="row full-height">
+                <div class="col-12 vertical-center-content">
+                    <button @onclick="() => deleteDialog.Show()" class="custom-button red input-control">
+                        <span class="oi oi-delete button-icon"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{ 
+    <EditForm Model="@EntryModel" OnValidSubmit="async () => await OnAddItem.InvokeAsync(EntryModel)">
+        <DataAnnotationsValidator />      
+        <div class="row list-entry @BackgroundClass">
+            <div class="col-12 col-sm-10 d-flex justify-content-end">
+                <InputText class="input-control full-width" placeholder="Name" id="name" @bind-Value="EntryModel.Name" />
+            </div>
+            <div class="col-12 col-sm-2 d-flex justify-content-end justify-content-sm-start">
+                
+                <button class="custom-button green input-control" type="submit">
+                    <span class="oi oi-plus button-icon"></span>
+                </button>
+            </div>
+         </div>
+</EditForm>
+}
+
+<DeleteDialog @ref="deleteDialog" ItemDescription=@EntryModel.Name OnDeleteAccepted="async () => await OnDelete.InvokeAsync(EntryModel)"></DeleteDialog>

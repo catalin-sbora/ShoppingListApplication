@@ -1,0 +1,160 @@
+﻿@page "/list/{ListId}"
+
+@using ShopListDemo.Shared.Data;
+@using Newtonsoft.Json;
+@using ShopListDemo.Client.Components;
+@using ShopListDemo.Client.API;
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+
+@attribute [Authorize]
+@inject ShoppingListClient apiClient
+@inject IToastService toastService
+
+@if (_shoppingList == null || _newListItem == null)
+{
+    <LoaderComponent Text="Loading list ..." HasDelay="true" />
+}
+else
+{
+
+    int counter = 0;
+    <div class="list-container">
+        <ShoppingListHeader Title="@_shoppingList.Name" />
+        @foreach (var listItem in _shoppingList.Items.OrderBy(p => p.Rank))
+        {
+            var entryClass = "odd-entry";
+            if (counter % 2 == 0)
+            {
+                entryClass = "even-entry";
+            }
+            var isLast = (counter == _shoppingList.Items.Count - 1);
+            <ShoppingListEntry BackgroundClass="@entryClass" IsFirst=@(counter==0) IsLast=@isLast
+                               OnDataUpdated=OnDataChanged
+                               OnRankDown="OnRankDown"
+                               OnRankUp="OnRankUp"
+                               OnDelete="OnRemoveItem"
+                               EntryModel=@listItem />
+            counter++;
+        }
+
+        <ShoppingListEntry BackgroundClass="odd-entry" IsFirst=true IsLast=true IsEditor="true"
+                           OnDataUpdated=@AddItem
+                           EntryModel=@_newListItem />
+
+    </div>
+
+
+}
+<br />
+<br />
+<div class="container d-flex justify-content-center">
+    <a class="btn btn-primary" href="/">
+        <span class="oi oi-arrow-circle-left"> </span>
+        Back to shopping lists
+    </a>
+</div>
+
+
+@code {
+    [Parameter] public string ListId { get; set; }
+
+    private ShoppingListData _shoppingList;
+    private ShoppingListItemData _newListItem;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await GetShoppingList();
+            InitNewListItem();
+        }
+        catch (HttpRequestException e)
+        {
+            toastService.ShowError(e.Message);
+        }
+
+    }
+
+    private void InitNewListItem()
+    {
+        _newListItem = new ShoppingListItemData
+        {
+            Rank = _shoppingList.Items.Count + 1,
+            Quantity = 1
+        };
+    }
+
+    private async Task OnDataChanged(ShoppingListItemData listItem)
+    {
+        try
+        {
+            await apiClient.UpdateListItem(ListId, listItem);
+            StateHasChanged();
+        }
+        catch (HttpRequestException e)
+        {
+            toastService.ShowError(e.Message);
+        }
+    }
+
+    private async Task OnRankUp(ShoppingListItemData item)
+    {
+        try
+        {
+            await apiClient.RankUpListItem(ListId, item.Id.ToString());
+            await GetShoppingList();
+        }
+        catch (HttpRequestException e)
+        {
+            toastService.ShowError(e.Message);
+        }
+    }
+
+    private async Task OnRankDown(ShoppingListItemData item)
+    {
+        try
+        {
+            await apiClient.RankDownListItem(ListId, item.Id.ToString());
+            await GetShoppingList();
+        }
+        catch (HttpRequestException e)
+        {
+            toastService.ShowError(e.Message);
+        }
+    }
+
+    private async Task OnRemoveItem(ShoppingListItemData item)
+    {
+        try
+        {
+            await apiClient.DeleteItemFromShoppingList(ListId, item.Id.ToString());
+            await GetShoppingList();
+        }
+        catch (HttpRequestException e)
+        {
+            toastService.ShowError(e.Message);
+        }
+
+    }
+
+    private async Task AddItem()
+    {
+        try
+        {
+            await apiClient.AddItemToShoppingList(ListId, _newListItem);
+            await GetShoppingList();
+            InitNewListItem();
+        }
+        catch (HttpRequestException e)
+        {
+            toastService.ShowError(e.Message);
+        }
+    }
+
+    private async Task GetShoppingList()
+    {
+        _shoppingList = await apiClient.GetShoppingList(ListId);
+        StateHasChanged();
+    }
+}

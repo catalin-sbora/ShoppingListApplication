@@ -1,0 +1,32 @@
+﻿@page "/authentication/{action}"
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using ShopListDemo.Client.Components
+
+<RemoteAuthenticatorView Action="@Action">
+    
+    <LoggingIn>
+        <LoaderComponent Text="Logging in..."/>
+    </LoggingIn>
+
+    <CompletingLoggingIn>
+        <LoaderComponent Text="Completing login..." />
+    </CompletingLoggingIn>
+
+    <LogInFailed></LogInFailed>
+
+    <LogOut></LogOut>
+
+    <CompletingLogOut></CompletingLogOut>
+
+    <LogOutFailed></LogOutFailed>
+
+    <LogOutSucceeded></LogOutSucceeded>
+
+    <UserProfile></UserProfile>
+
+    <Registering></Registering>
+</RemoteAuthenticatorView>
+
+@code{
+    [Parameter] public string Action { get; set; }
+}

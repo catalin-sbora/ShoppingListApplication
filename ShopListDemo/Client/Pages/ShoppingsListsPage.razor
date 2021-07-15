@@ -1,0 +1,120 @@
+@page "/lists"
+@using ShopListDemo.Shared.Data
+@using ShopListDemo.Client.Components.SavedListsComponent;
+@using ShopListDemo.Client.API;
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using ShopListDemo.Client.Components;
+
+@attribute [Authorize]
+
+@inject ShoppingListClient apiClient
+@inject IToastService toastService
+@inject NavigationManager NavManager
+
+@if (_shoppingLists == null)
+{
+    <LoaderComponent Text="Loading lists ..." HasDelay="true" />
+}
+else
+{
+
+    int counter = 0;
+    <div class="list-container">
+        <SavedListsHeader Title="My Shopping Lists" />
+        @foreach (var shoppingList in _shoppingLists)
+        {
+            var entryClass = "odd-entry";
+            if (counter % 2 == 0)
+            {
+                entryClass = "even-entry";
+            }
+
+            <SavedListsEntry BackgroundClass="@entryClass"
+                             OnDelete="RemoveList"
+                             EntryModel=@shoppingList />
+            counter++;
+        }
+        <SavedListsEntry BackgroundClass="even-entry"
+                         EntryModel="@_newShoppingList"
+                         OnAddItem="AddList"
+                         IsEditor="true" />
+
+    </div>
+
+
+}
+
+@code {
+    private ShoppingListData[] _shoppingLists;
+    private ShoppingListData _newShoppingList;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        await GetShoppingLists();
+
+    }
+
+    private async Task GetShoppingLists()
+    {
+        try
+        {
+            _shoppingLists = await apiClient.GetShoppingLists();
+            InitNewShoppingList();
+        }
+        catch (AccessTokenNotAvailableException e)
+        {
+            e.Redirect();
+        }
+        catch (HttpRequestException e)
+        {
+            toastService.ShowError(e.Message);
+        }
+    }
+
+    private void InitNewShoppingList()
+    {
+        _newShoppingList = new ShoppingListData
+        {
+
+            CreateTime = DateTime.Now,
+            Items = new List<ShoppingListItemData>(),
+            Name = ""
+        };
+    }
+
+    private async Task AddList()
+    {
+        try
+        {
+            var listData = await apiClient.CreateShoppingList(_newShoppingList);
+            NavManager.NavigateTo($"/list/{listData.Id}");
+        }
+        catch (AccessTokenNotAvailableException e)
+        {
+            e.Redirect();
+        }
+        catch (HttpRequestException e)
+        {
+            toastService.ShowError(e.Message);
+        }
+    }
+
+    private async Task RemoveList(ShoppingListData shoppingList)
+    {
+        try
+        {
+            await apiClient.DeleteShoppingList(shoppingList.Id.ToString());
+            await GetShoppingLists();
+        }
+        catch (AccessTokenNotAvailableException e)
+        {
+            e.Redirect();
+        }
+        catch (HttpRequestException e)
+        {
+            toastService.ShowError(e.Message);
+        }
+    }
+}
