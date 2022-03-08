@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace ShopListDemo.Client
 {
-asdasdasdasda
+
     public class Program
     {
         public static async Task Main(string[] args)
